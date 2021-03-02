@@ -9,4 +9,5 @@ Route::prefix('v1')->group(function() {
     Route::post('register', [AuthController::class, 'register']);
     Route::post('verify-email', [AuthController::class, 'verify_email']);
     Route::post('forgot-password', [AuthController::class, 'forgot_password']);
+    Route::post('reset-password', [AuthController::class, 'reset_password']);
 });

@@ -8,6 +8,8 @@ use App\Events\ForgotPasswordEvent;
 use App\Events\UserRegistered;
 use App\Exceptions\ForgotPasswordExistsException;
 use App\Exceptions\LoginInvalidException;
+use App\Exceptions\TokenResetPasswordExpiredException;
+use App\Exceptions\TokenResetPasswordInvalidException;
 use App\Exceptions\UserHasBeenTakenException;
 use App\Exceptions\VerifyEmailTokenException;
 use App\Models\PasswordReset;
@@ -80,7 +82,12 @@ class AuthService
         return $user;
     }
 
-    public function forgot_password(string $email)
+    /**
+     * @param string $email
+     * @return string
+     * @throws ForgotPasswordExistsException
+     */
+    public function forgot_password(string $email): string
     {
         $user = User::where('email', $email)->firstOrFail();
 
@@ -99,6 +106,35 @@ class AuthService
         ]);
 
         event(new ForgotPasswordEvent($user, $token));
+
+        return '';
+    }
+
+    /**
+     * @param string $token
+     * @param string $password
+     * @return string
+     * @throws TokenResetPasswordExpiredException
+     * @throws TokenResetPasswordInvalidException
+     */
+    public function reset_password(string $token, string $password): string
+    {
+        $passwordToken = PasswordReset::where('token', $token)->first();
+
+        if(!$passwordToken) {
+            throw new TokenResetPasswordInvalidException();
+        }
+
+        $passwordExpired = PasswordReset::where('token', $token)->where('expires_in', '>=', Carbon::now()->toDateString())->first();
+
+        if(!$passwordExpired) {
+            PasswordReset::where('token', $token)->delete();
+            throw new TokenResetPasswordExpiredException();
+        }
+
+        User::where('email', $passwordExpired->email)->update([
+           'password' => bcrypt($password)
+        ]);
 
         return '';
     }

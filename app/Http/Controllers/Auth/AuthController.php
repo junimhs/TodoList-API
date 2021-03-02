@@ -2,12 +2,16 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Exceptions\ForgotPasswordExistsException;
 use App\Exceptions\LoginInvalidException;
+use App\Exceptions\TokenResetPasswordExpiredException;
+use App\Exceptions\TokenResetPasswordInvalidException;
 use App\Exceptions\VerifyEmailTokenException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\AuthForgotPasswordRequest;
 use App\Http\Requests\Auth\AuthLoginRequest;
 use App\Http\Requests\Auth\AuthRegisterRequest;
+use App\Http\Requests\Auth\AuthResetPasswordRequest;
 use App\Http\Requests\Auth\AuthVerifyEmailRequest;
 use App\Http\Resources\UserResource;
 use App\Services\AuthService;
@@ -56,9 +60,26 @@ class AuthController extends Controller
         return new UserResource($user);
     }
 
-    public function forgot_password(AuthForgotPasswordRequest $request)
+    /**
+     * @param AuthForgotPasswordRequest $request
+     * @return string
+     * @throws ForgotPasswordExistsException
+     */
+    public function forgot_password(AuthForgotPasswordRequest $request): string
     {
         $input = $request->validated();
         return $this->authService->forgot_password($input['email']);
+    }
+
+    /**
+     * @param AuthResetPasswordRequest $request
+     * @return string
+     * @throws TokenResetPasswordExpiredException
+     * @throws TokenResetPasswordInvalidException
+     */
+    public function reset_password(AuthResetPasswordRequest $request): string
+    {
+        $input = $request->validated();
+        return $this->authService->reset_password($input['token'], $input['password']);
     }
 }
