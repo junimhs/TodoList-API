@@ -68,7 +68,7 @@ class AuthService
             throw new VerifyEmailTokenException();
         }
 
-        $user->confirmation_token = '';
+        $user->confirmation_token = null;
         $user->email_verified_at = now();
 
         $user->save();
