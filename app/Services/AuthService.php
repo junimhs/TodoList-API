@@ -4,11 +4,15 @@
 namespace App\Services;
 
 
+use App\Events\ForgotPasswordEvent;
 use App\Events\UserRegistered;
+use App\Exceptions\ForgotPasswordExistsException;
 use App\Exceptions\LoginInvalidException;
 use App\Exceptions\UserHasBeenTakenException;
 use App\Exceptions\VerifyEmailTokenException;
+use App\Models\PasswordReset;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Support\Str;
 
 class AuthService
@@ -74,5 +78,28 @@ class AuthService
         $user->save();
 
         return $user;
+    }
+
+    public function forgot_password(string $email)
+    {
+        $user = User::where('email', $email)->firstOrFail();
+
+        $passwordExist = PasswordReset::where('email', $email)->where('expires_in', '>=', Carbon::now()->toDateString())->first();
+
+        if($passwordExist) {
+            throw new ForgotPasswordExistsException();
+        }
+
+        $token = Str::random(60);
+
+        PasswordReset::create([
+            'email' => $user->email,
+            'token' => $token,
+            'expires_in' => Carbon::now()->addHour(1)
+        ]);
+
+        event(new ForgotPasswordEvent($user, $token));
+
+        return '';
     }
 }
