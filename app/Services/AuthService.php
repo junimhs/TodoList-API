@@ -96,11 +96,9 @@ class AuthService
             throw new UserNotExistsException();
         }
 
-        $passwordExist = PasswordReset::where('email', $email)->where('expires_in', '<=', Carbon::now()->toDateTimeLocalString())->first();
+        $passwordExist = PasswordReset::where('email', $email)->where('expires_in', '>=', Carbon::now()->toDateTimeLocalString())->first();
 
-        dd($passwordExist);
-
-        if(!$passwordExist) {
+        if($passwordExist) {
             throw new ForgotPasswordExistsException();
         }
 
@@ -132,9 +130,9 @@ class AuthService
             throw new TokenResetPasswordInvalidException();
         }
 
-        $passwordExpired = PasswordReset::where('token', $token)->where('expires_in', '>=', Carbon::now()->toDateTimeLocalString())->first();
+        $passwordExpired = PasswordReset::where('token', $token)->where('expires_in', '<', Carbon::now()->toDateTimeLocalString())->first();
 
-        if(!$passwordExpired) {
+        if($passwordExpired) {
             PasswordReset::where('token', $token)->delete();
             throw new TokenResetPasswordExpiredException();
         }
