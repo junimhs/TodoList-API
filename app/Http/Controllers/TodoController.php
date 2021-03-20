@@ -21,6 +21,7 @@ class TodoController extends Controller
 
     public function show(Todo $todo)
     {
+        $this->authorize('view', $todo);
         $todo->load('tasks');
         return new TodoResource($todo);
     }
